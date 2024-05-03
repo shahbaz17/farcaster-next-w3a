@@ -21,7 +21,7 @@ export default function handler(
       exp: Math.floor(Date.now() / 1000) + 60 * 60,
     },
     privateKey,
-    { algorithm: "RS256", keyid: "fc56347e235b1fc88532633d011e6" }
+    { algorithm: "RS256", keyid: "49563d7e86f6626426be" }
   );
   res.status(200).json({ token: jwtToken });
 }
