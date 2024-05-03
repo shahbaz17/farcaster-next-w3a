@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Farcaster AuthKit + NextAuth Demo</title>
+        <title>Web3Auth + Farcaster AuthKit + NextAuth Demo</title>
       </Head>
       <main style={{ fontFamily: "Inter, sans-serif" }}>
         <AuthKitProvider config={config}>
@@ -40,18 +40,25 @@ function Content() {
     return nonce;
   }, []);
 
-  const handleSuccess = useCallback(
-    (res: StatusAPIResponse) => {
-      signIn("credentials", {
-        message: res.message,
-        signature: res.signature,
-        name: res.username,
-        pfp: res.pfpUrl,
-        redirect: false,
-      });
-    },
-    []
-  );
+  const handleSuccess = useCallback(async (res: StatusAPIResponse) => {
+    console.log("response", res);
+    await signIn("credentials", {
+      message: res.message,
+      signature: res.signature,
+      name: res.displayName,
+      username: res.username,
+      pfp: res.pfpUrl,
+      redirect: false,
+    });
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userData: res }),
+    });
+    const data = await response.json();
+  }, []);
 
   return (
     <div>
@@ -70,7 +77,8 @@ function Content() {
           This example app shows how to use{" "}
           <a
             href="https://docs.farcaster.xyz/auth-kit/introduction"
-            target="_blank" rel="noreferrer"
+            target="_blank"
+            rel="noreferrer"
           >
             Farcaster AuthKit
           </a>{" "}
@@ -81,29 +89,6 @@ function Content() {
           .
         </p>
         <Profile />
-        <div>
-          <h2>Run this demo:</h2>
-          <div
-            style={{
-              margin: "0 auto",
-              padding: "24px",
-              textAlign: "left",
-              maxWidth: "640px",
-              backgroundColor: "#fafafa",
-              fontFamily: "monospace",
-              fontSize: "1.25em",
-              border: "1px solid #eaeaea",
-            }}
-          >
-            git clone https://github.com/farcasterxyz/auth-monorepo.git &&
-            <br />
-            cd auth-monorepo/examples/with-next-auth &&
-            <br />
-            yarn install &&
-            <br />
-            yarn dev
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -127,8 +112,8 @@ function Profile() {
     </div>
   ) : (
     <p>
-      Click the &quot;Sign in with Farcaster&quote; button above, then scan the QR code to
-      sign in.
+      Click the &quot;Sign in with Farcaster&quot; button above, then scan the
+      QR code to sign in.
     </p>
   );
 }
