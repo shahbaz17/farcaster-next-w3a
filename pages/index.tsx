@@ -58,6 +58,7 @@ function Content() {
       body: JSON.stringify({ userData: res }),
     });
     const data = await response.json();
+    console.log("data", data.token);
   }, []);
 
   return (
@@ -85,6 +86,10 @@ function Content() {
           and{" "}
           <a href="https://next-auth.js.org/" target="_blank" rel="noreferrer">
             NextAuth.js
+          </a>{" "}
+          with{" "}
+          <a href="https://web3auth.io" target="_blank" rel="noreferrer">
+            Web3Auth
           </a>
           .
         </p>
