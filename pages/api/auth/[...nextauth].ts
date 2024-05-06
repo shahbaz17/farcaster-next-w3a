@@ -63,4 +63,5 @@ export default (req: NextApiRequest, res: NextApiResponse) =>
         },
       }),
     ],
+    secret: process.env.SECRET,
   });
