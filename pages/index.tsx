@@ -15,7 +15,7 @@ import {
   IProvider,
   WEB3AUTH_NETWORK,
 } from "@web3auth/base";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
 
 const config = {
