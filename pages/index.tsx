@@ -251,6 +251,16 @@ function Content() {
         </p>
         <Profile />
       </div>
+      <p style={{ paddingTop: "22vh", textAlign: "center" }}>
+        <a href="https://github.com/shahbaz17/farcaster-next-w3a">
+          Source code
+        </a>
+      </p>
+      <p style={{ paddingTop: "2vh", textAlign: "center" }}>
+        <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fshahbaz17%2Ffarcaster-next-w3a">
+          <img src="https://vercel.com/button" alt="Deploy with Vercel" />
+        </a>
+      </p>
     </div>
   );
 }
