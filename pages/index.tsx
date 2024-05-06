@@ -21,8 +21,8 @@ import { ethers } from "ethers";
 const config = {
   relay: "https://relay.farcaster.xyz",
   rpcUrl: "https://mainnet.optimism.io",
-  siweUri: "http://example.com/login",
-  domain: "example.com",
+  siweUri: "https://farcaster-next-w3a.vercel.app/login",
+  domain: "farcaster-next-w3a.vercel.app",
 };
 
 const privateKeyProvider = new EthereumPrivateKeyProvider({
