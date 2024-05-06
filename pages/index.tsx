@@ -7,13 +7,75 @@ import {
   AuthKitProvider,
   StatusAPIResponse,
 } from "@farcaster/auth-kit";
-import { useCallback, useState } from "react";
+import { Web3Auth, decodeToken } from "@web3auth/single-factor-auth";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import {
+  ADAPTER_EVENTS,
+  CHAIN_NAMESPACES,
+  IProvider,
+  WEB3AUTH_NETWORK,
+} from "@web3auth/base";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { ethers } from "ethers";
 
 const config = {
   relay: "https://relay.farcaster.xyz",
   rpcUrl: "https://mainnet.optimism.io",
   siweUri: "http://example.com/login",
   domain: "example.com",
+};
+
+const privateKeyProvider = new EthereumPrivateKeyProvider({
+  config: {
+    chainConfig: {
+      chainNamespace: CHAIN_NAMESPACES.EIP155,
+      chainId: "0x1",
+      rpcTarget: "https://rpc.ankr.com/eth",
+      displayName: "Ethereum Mainnet",
+      blockExplorerUrl: "https://etherscan.io",
+      ticker: "ETH",
+      tickerName: "Ethereum",
+    },
+  },
+});
+
+const verifier = "w3a-farcaster-demo";
+
+const web3auth = new Web3Auth({
+  clientId:
+    "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ", // Get your Client ID from the Web3Auth Dashboard
+  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
+  usePnPKey: false, // By default, this SDK returns CoreKitKey by default.
+});
+
+const login = async (idToken: any) => {
+  if (!web3auth.ready) {
+    console.log("web3auth initialised yet");
+    return;
+  }
+  const { payload } = decodeToken(idToken);
+
+  const web3authProvider = await web3auth.connect({
+    verifier,
+    verifierId: (payload as any).sub,
+    idToken,
+  });
+  return web3authProvider;
+};
+
+const getAccounts = async (provider: IProvider) => {
+  if (!provider) {
+    console.log("provider not initialized yet");
+    return;
+  }
+
+  const ethersProvider = new ethers.BrowserProvider(provider as any);
+
+  const signer = await ethersProvider.getSigner();
+
+  // Get user's Ethereum public address
+  const address = signer.getAddress();
+  return address;
 };
 
 export default function Home() {
@@ -33,6 +95,22 @@ export default function Home() {
 
 function Content() {
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await web3auth.init(privateKeyProvider);
+
+        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
+          console.log("Web3Auth Status", web3auth.status);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    init();
+  }, []);
 
   const getNonce = useCallback(async () => {
     const nonce = await getCsrfToken();
@@ -58,7 +136,11 @@ function Content() {
       body: JSON.stringify({ userData: res }),
     });
     const data = await response.json();
-    console.log("data", data.token);
+    const token = data.token;
+    console.log("token", token);
+    const web3authProvider = await login(token);
+    const accounts = await getAccounts(web3authProvider as IProvider);
+    console.log("accounts", accounts);
   }, []);
 
   return (
