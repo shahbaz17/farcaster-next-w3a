@@ -74,7 +74,9 @@ const getAccounts = async (provider: IProvider) => {
   const signer = await ethersProvider.getSigner();
 
   // Get user's Ethereum public address
-  const address = signer.getAddress();
+  const address = await signer.getAddress();
+  console.log("ETH Address:", address);
+  uiConsole("ETH Address:", address);
   return address;
 };
 
@@ -95,6 +97,7 @@ const getBalance = async (provider: IProvider) => {
     await ethersProvider.getBalance(address) // Balance is in wei
   );
   console.log("Balance:", balance);
+  uiConsole("Balance:", balance);
   return balance;
 };
 
@@ -109,6 +112,7 @@ const signMessage = async (provider: IProvider) => {
   const message = "Hello world!";
   const signedMessage = await signer.signMessage(message);
   console.log("Signed Message:", signedMessage);
+  uiConsole(signedMessage);
   return signedMessage;
 };
 
@@ -131,6 +135,7 @@ const signTransaction = async (provider: IProvider) => {
 
   const receipt = await tx.wait();
   console.log("Transaction Receipt:", receipt);
+  uiConsole(receipt);
   return receipt;
 };
 
@@ -139,22 +144,14 @@ const logOut = async () => {
   await signOut();
 };
 
+function uiConsole(...args: any[]): void {
+  const el = document.querySelector("#console>p");
+  if (el) {
+    el.innerHTML = JSON.stringify(args || {}, null, 2);
+  }
+}
+
 export default function Home() {
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await web3auth.init(privateKeyProvider);
-
-        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
-          console.log("Web3Auth Status", web3auth.status);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    init();
-  }, []);
   return (
     <>
       <Head>
@@ -171,7 +168,22 @@ export default function Home() {
 
 function Content() {
   const [error, setError] = useState(false);
-  const [userAccount, setUserAccount] = useState<string | null>(null);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await web3auth.init(privateKeyProvider);
+
+        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
+          console.log("Web3Auth Status", web3auth.status);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    init();
+  }, []);
 
   const getNonce = useCallback(async () => {
     const nonce = await getCsrfToken();
@@ -202,7 +214,6 @@ function Content() {
     const web3authProvider = await login(token);
     const accounts = await getAccounts(web3authProvider as IProvider);
     console.log("accounts", accounts);
-    if (accounts) setUserAccount(accounts);
   }, []);
 
   return (
@@ -212,7 +223,7 @@ function Content() {
           nonce={getNonce}
           onSuccess={handleSuccess}
           onError={() => setError(true)}
-          onSignOut={() => signOut()}
+          onSignOut={() => logOut()}
         />
         {error && <div>Unable to sign in at this time.</div>}
       </div>
@@ -238,7 +249,6 @@ function Content() {
           </a>
           .
         </p>
-        {userAccount && <p>Your Ethereum account: {userAccount}</p>}
         <Profile />
       </div>
     </div>
@@ -264,6 +274,13 @@ function Profile() {
         <button
           type="button"
           style={{ padding: "6px 12px", margin: "6px 6px", cursor: "pointer" }}
+          onClick={() => getAccounts(web3auth.provider as IProvider)}
+        >
+          Get Account
+        </button>
+        <button
+          type="button"
+          style={{ padding: "6px 12px", margin: "6px 6px", cursor: "pointer" }}
           onClick={() => getBalance(web3auth.provider as IProvider)}
         >
           Get Balance
@@ -283,6 +300,9 @@ function Profile() {
           Send Transaction
         </button>
       </p>
+      <div id="console" style={{ whiteSpace: "pre-line" }}>
+        <p style={{ whiteSpace: "pre-line" }}></p>
+      </div>
     </div>
   ) : (
     <p>
