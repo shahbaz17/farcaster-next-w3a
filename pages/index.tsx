@@ -29,10 +29,10 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
   config: {
     chainConfig: {
       chainNamespace: CHAIN_NAMESPACES.EIP155,
-      chainId: "0x1",
-      rpcTarget: "https://rpc.ankr.com/eth",
-      displayName: "Ethereum Mainnet",
-      blockExplorerUrl: "https://etherscan.io",
+      chainId: "0xaa36a7",
+      rpcTarget: "https://rpc.ankr.com/eth_sepolia",
+      displayName: "Ethereum Sepolia Testnet",
+      blockExplorerUrl: "https://sepolia.etherscan.io",
       ticker: "ETH",
       tickerName: "Ethereum",
     },
@@ -78,7 +78,83 @@ const getAccounts = async (provider: IProvider) => {
   return address;
 };
 
+const getBalance = async (provider: IProvider) => {
+  if (!provider) {
+    console.log("provider not initialized yet");
+    return;
+  }
+
+  const ethersProvider = new ethers.BrowserProvider(provider as any);
+
+  const signer = await ethersProvider.getSigner();
+
+  // Get user's Ethereum public address
+  const address = signer.getAddress();
+
+  const balance = ethers.formatEther(
+    await ethersProvider.getBalance(address) // Balance is in wei
+  );
+  console.log("Balance:", balance);
+  return balance;
+};
+
+const signMessage = async (provider: IProvider) => {
+  if (!provider) {
+    console.log("provider not initialized yet");
+    return;
+  }
+  const ethersProvider = new ethers.BrowserProvider(provider);
+  const signer = await ethersProvider.getSigner();
+
+  const message = "Hello world!";
+  const signedMessage = await signer.signMessage(message);
+  console.log("Signed Message:", signedMessage);
+  return signedMessage;
+};
+
+const signTransaction = async (provider: IProvider) => {
+  if (!provider) {
+    console.log("provider not initialized yet");
+    return;
+  }
+  const ethersProvider = new ethers.BrowserProvider(provider);
+  const signer = await ethersProvider.getSigner();
+
+  const destination = "0xeaA8Af602b2eDE45922818AE5f9f7FdE50cFa1A8";
+  const amount = ethers.parseEther("0.005");
+  const tx = await signer.sendTransaction({
+    to: destination,
+    value: amount,
+    // maxPriorityFeePerGas: "5000000000", // Max priority fee per gas
+    // maxFeePerGas: "6000000000000", // Max fee per gas
+  });
+
+  const receipt = await tx.wait();
+  console.log("Transaction Receipt:", receipt);
+  return receipt;
+};
+
+const logOut = async () => {
+  await web3auth.logout();
+  await signOut();
+};
+
 export default function Home() {
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await web3auth.init(privateKeyProvider);
+
+        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
+          console.log("Web3Auth Status", web3auth.status);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    init();
+  }, []);
   return (
     <>
       <Head>
@@ -95,22 +171,7 @@ export default function Home() {
 
 function Content() {
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await web3auth.init(privateKeyProvider);
-
-        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
-          console.log("Web3Auth Status", web3auth.status);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    init();
-  }, []);
+  const [userAccount, setUserAccount] = useState<string | null>(null);
 
   const getNonce = useCallback(async () => {
     const nonce = await getCsrfToken();
@@ -141,6 +202,7 @@ function Content() {
     const web3authProvider = await login(token);
     const accounts = await getAccounts(web3authProvider as IProvider);
     console.log("accounts", accounts);
+    if (accounts) setUserAccount(accounts);
   }, []);
 
   return (
@@ -154,8 +216,9 @@ function Content() {
         />
         {error && <div>Unable to sign in at this time.</div>}
       </div>
+
       <div style={{ paddingTop: "33vh", textAlign: "center" }}>
-        <h1>@farcaster/auth-kit + NextAuth</h1>
+        <h1>Web3Auth + @farcaster/auth-kit + NextAuth</h1>
         <p>
           This example app shows how to use{" "}
           <a
@@ -175,6 +238,7 @@ function Content() {
           </a>
           .
         </p>
+        {userAccount && <p>Your Ethereum account: {userAccount}</p>}
         <Profile />
       </div>
     </div>
@@ -191,9 +255,32 @@ function Profile() {
         <button
           type="button"
           style={{ padding: "6px 12px", cursor: "pointer" }}
-          onClick={() => signOut()}
+          onClick={() => logOut()}
         >
           Click here to sign out
+        </button>
+      </p>
+      <p>
+        <button
+          type="button"
+          style={{ padding: "6px 12px", margin: "6px 6px", cursor: "pointer" }}
+          onClick={() => getBalance(web3auth.provider as IProvider)}
+        >
+          Get Balance
+        </button>
+        <button
+          type="button"
+          style={{ padding: "6px 12px", margin: "6px 6px", cursor: "pointer" }}
+          onClick={() => signMessage(web3auth.provider as IProvider)}
+        >
+          Sign Message
+        </button>
+        <button
+          type="button"
+          style={{ padding: "6px 12px", margin: "6px 6px", cursor: "pointer" }}
+          onClick={() => signTransaction(web3auth.provider as IProvider)}
+        >
+          Send Transaction
         </button>
       </p>
     </div>
