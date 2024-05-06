@@ -46,7 +46,7 @@ export default (req: NextApiRequest, res: NextApiResponse) =>
           const verifyResponse = await appClient.verifySignInMessage({
             message: credentials?.message as string,
             signature: credentials?.signature as `0x${string}`,
-            domain: "farcaster-next-w3a.vercel.app",
+            domain: "example.com",
             nonce: csrfToken,
           });
           const { success, fid } = verifyResponse;
